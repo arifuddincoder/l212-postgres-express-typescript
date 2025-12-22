@@ -45,12 +45,72 @@ app.get("/", (req: Request, res: Response) => {
 	res.send("Hello World!");
 });
 
-app.post("/", (req: Request, res: Response) => {
-	console.log(req.body);
+app.post("/users", async (req: Request, res: Response) => {
+	const { name, email } = req.body;
+	try {
+		const result = await pool.query(`INSERT INTO users(name, email) VALUES($1, $2) RETURNING *`, [name, email]);
 
-	res.status(201).json({
-		success: true,
-		message: "API is working",
+		res.status(201).json({
+			success: true,
+			message: "Data inserted successfully",
+			data: result.rows[0],
+		});
+	} catch (err: any) {
+		res.status(500).json({
+			success: false,
+			message: err.message,
+		});
+	}
+});
+
+app.get("/users", async (req: Request, res: Response) => {
+	try {
+		const result = await pool.query("SELECT * FROM users");
+
+		return res.status(200).json({
+			success: true,
+			message: "Users retrieved successfully",
+			data: result.rows,
+		});
+	} catch (err: any) {
+		return res.status(500).json({
+			success: false,
+			message: err?.message || "Internal Server Error",
+		});
+	}
+});
+
+app.get("/users/:id", async (req: Request, res: Response) => {
+	const { id } = req.params;
+
+	try {
+		const result = await pool.query("SELECT * FROM users WHERE id = $1", [id]);
+
+		if (result.rows.length === 0) {
+			return res.status(404).json({
+				success: false,
+				message: "User not found",
+			});
+		}
+
+		return res.status(200).json({
+			success: true,
+			message: "User retrieved successfully",
+			data: result.rows[0],
+		});
+	} catch (error: any) {
+		return res.status(500).json({
+			success: false,
+			message: error.message,
+		});
+	}
+});
+
+app.use((req: Request, res: Response) => {
+	res.status(404).json({
+		success: false,
+		message: "Route not found",
+		path: req.originalUrl,
 	});
 });
 

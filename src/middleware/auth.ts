@@ -19,9 +19,9 @@ const auth = (...roles: string[]) => {
 			req.user = decoded;
 
 			// roles check (optional)
-			// if (roles.length && !roles.includes((decoded as any).role)) {
-			//   return res.status(403).json({ success: false, message: "Forbidden" });
-			// }
+			if (roles.length && !roles.includes((decoded as any).role)) {
+				return res.status(403).json({ success: false, message: "Forbidden" });
+			}
 
 			return next();
 		} catch (error: any) {

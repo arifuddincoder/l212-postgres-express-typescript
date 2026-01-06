@@ -1,19 +1,28 @@
 import { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
 import config from "../config";
 
-const auth = () => {
-	return (req: Request, res: Response, next: NextFunction) => {
-		const token = req.headers.authorization;
+const auth = (req: Request, res: Response, next: NextFunction) => {
+	try {
+		const token = req.headers.authorization?.trim();
 
 		if (!token) {
-			return res.status(500).json({ message: "You are not allowed!!" });
+			return res.status(401).json({
+				success: false,
+				message: "Unauthorized: token missing",
+			});
 		}
 
-		const decoded = jwt.verify(token, config.jwtSecret as string);
-		console.log({ auth_token: decoded });
-		next();
-	};
+		const decoded = jwt.verify(token, config.jwtSecret as string) as JwtPayload;
+
+		req.user = decoded;
+		return next();
+	} catch (error: any) {
+		return res.status(401).json({
+			success: false,
+			message: "Unauthorized: invalid or expired token",
+		});
+	}
 };
 
 export default auth;
